@@ -22,7 +22,15 @@ This provider allows you to easily implement the "Login with XAuthConnect" funct
 
 ## Installation
 
-This provider is intended to be used as a local `path` repository in your project's `composer.json`.
+Install the package via Composer:
+
+```bash
+composer require newlandpe/oauth2-xauthconnect
+```
+
+### Installing from a local path (for development)
+
+If you're developing this library locally or need to use it as a path repository:
 
 1. Place this library in a directory within your project (e.g., `oauth_libs/oauth2-xauthconnect`).
 2. Add the following to your main `composer.json` file:
@@ -45,6 +53,8 @@ This provider is intended to be used as a local `path` repository in your projec
 3. Run `composer update` to install the dependencies.
 
 ## Usage
+
+Follow these steps to integrate XAuthConnect into your application:
 
 ### 1. Initialization
 
