@@ -25,10 +25,15 @@ jobs:
         php-version: ${{ matrix.php-version }}
         extensions: mbstring, pdo_sqlite, pdo_mysql
         tools: composer:v2
-        coverage: none # or xdebug, pcov
+        coverage: xdebug
 
     - name: Install dependencies
       run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
     - name: Run PHPUnit tests
       run: vendor/bin/phpunit
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
