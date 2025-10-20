@@ -19,7 +19,7 @@
     },
     "autoload": {
         "psr-4": {
-            "ChernegaSergiy\\XAuthConnect\\OAuth2\\Client\\Provider\\": "src/Provider/"
+            "ChernegaSergiy\\XAuthConnect\\OAuth2\\Client\\": "src/"
         }
     },
     "autoload-dev": {
