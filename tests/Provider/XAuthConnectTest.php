@@ -2,6 +2,7 @@
 
 namespace ChernegaSergiy\XAuthConnect\OAuth2\Client\Tests\Provider;
 
+use ChernegaSergiy\XAuthConnect\OAuth2\Client\Exception\HostedDomainException;
 use ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider\XAuthConnect;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Handler\MockHandler;
@@ -139,5 +140,14 @@ class XAuthConnectTest extends TestCase
 
         $this->provider->revokeToken('test_token');
         $this->assertTrue(true); // No exception thrown
+    }
+
+    public function testHostedDomainExceptionNotMatchingDomain()
+    {
+        $configuredDomain = 'example.com';
+        $exception = HostedDomainException::notMatchingDomain($configuredDomain);
+
+        $this->assertInstanceOf(HostedDomainException::class, $exception);
+        $this->assertEquals("User is not part of domain '$configuredDomain'", $exception->getMessage());
     }
 }
