@@ -31,7 +31,7 @@ jobs:
       run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
     - name: Run PHPUnit tests
-      run: vendor/bin/phpunit
+      run: vendor/bin/phpunit --coverage-clover coverage.xml --display-warnings
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
