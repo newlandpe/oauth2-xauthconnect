@@ -4,6 +4,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/newlandpe/oauth2-xauthconnect.svg?label=Downloads&logo=packagist)](https://packagist.org/packages/newlandpe/oauth2-xauthconnect)
 [![License](https://img.shields.io/packagist/l/newlandpe/oauth2-xauthconnect.svg?label=Licence&logo=open-source-initiative)](https://packagist.org/packages/newlandpe/oauth2-xauthconnect)
 [![Tests](https://img.shields.io/github/actions/workflow/status/newlandpe/oauth2-xauthconnect/phpunit.yml?label=Tests&logo=github)](https://github.com/newlandpe/oauth2-xauthconnect/actions/workflows/phpunit.yml)
+[![Test Coverage](https://img.shields.io/codecov/c/github/newlandpe/oauth2-xauthconnect?label=Test%20Coverage&logo=codecov)](https://app.codecov.io/gh/newlandpe/oauth2-xauthconnect)
 
 This package provides an OAuth 2.0 client provider for integrating with an XAuthConnect authorization server. It is built to work with the popular [`league/oauth2-client`](https://github.com/thephpleague/oauth2-client) package.
 
