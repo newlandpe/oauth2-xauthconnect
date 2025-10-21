@@ -2,6 +2,7 @@
 
 namespace ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider;
 
+use GuzzleHttp\Client as HttpClient;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
@@ -23,6 +24,10 @@ class XAuthConnect extends AbstractProvider
     {
         parent::__construct($options, $collaborators);
 
+        if (!empty($options['issuer'])) {
+            $this->discoverEndpoints($options['issuer']);
+        }
+
         $requiredOptions = [
             'baseAuthorizationUrl',
             'baseAccessTokenUrl',
@@ -32,10 +37,37 @@ class XAuthConnect extends AbstractProvider
         ];
 
         foreach ($requiredOptions as $option) {
-            if (empty($options[$option])) {
-                throw new \InvalidArgumentException("The '{$option}' option is required.");
+            if (empty($this->{$option}) && empty($options[$option])) {
+                throw new \InvalidArgumentException("The '{$option}' option is required or must be discoverable from the 'issuer' URL.");
             }
-            $this->{$option} = $options[$option];
+            if (empty($this->{$option})) {
+                $this->{$option} = $options[$option];
+            }
+        }
+    }
+
+    protected function discoverEndpoints(string $issuer):
+    void
+    {
+        $wellKnownUrl = rtrim($issuer, '/') . '/.well-known/openid-configuration';
+
+        try {
+            $httpClient = new HttpClient();
+            $response = $httpClient->get($wellKnownUrl);
+            $data = json_decode((string) $response->getBody(), true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \RuntimeException('Failed to parse discovery document: ' . json_last_error_msg());
+            }
+
+            $this->baseAuthorizationUrl = $data['authorization_endpoint'] ?? null;
+            $this->baseAccessTokenUrl = $data['token_endpoint'] ?? null;
+            $this->resourceOwnerDetailsUrl = $data['userinfo_endpoint'] ?? null;
+            $this->introspectUrl = $data['introspection_endpoint'] ?? null;
+            $this->revokeUrl = $data['revocation_endpoint'] ?? null;
+
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Failed to discover endpoints: ' . $e->getMessage(), 0, $e);
         }
     }
 
