@@ -12,6 +12,7 @@ This provider allows you to easily implement the "Login with XAuthConnect" funct
 
 ## Features
 
+- **OIDC Discovery:** Automatically configure endpoints from a single `issuer` URL.
 - Implements the standard **Authorization Code Grant** flow.
 - Supports **PKCE** (Proof Key for Code Exchange) for enhanced security.
 - Provides helper methods for XAuthConnect-specific features:
@@ -27,6 +28,8 @@ Install the package via Composer:
 ```bash
 composer require newlandpe/oauth2-xauthconnect
 ```
+
+This package now requires `guzzlehttp/guzzle` v7.0 or greater.
 
 ### Installing from a local path (for development)
 
@@ -54,26 +57,42 @@ If you're developing this library locally or need to use it as a path repository
 
 ## Usage
 
-Follow these steps to integrate XAuthConnect into your application:
+Follow these steps to integrate XAuthConnect into your application.
 
 ### 1. Initialization
 
-First, create an instance of the provider. You must provide all required URLs and client credentials.
+You can initialize the provider in two ways.
+
+#### Method 1: OIDC Discovery (Recommended)
+
+Provide the `issuer` URL of your XAuthConnect server. The provider will automatically discover all the required endpoint URLs.
 
 ```php
 require_once 'vendor/autoload.php';
 
 $provider = new ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider\XAuthConnect([
+    'clientId'     => 'your-client-id',
+    'clientSecret' => 'your-client-secret',
+    'redirectUri'  => 'https://your-redirect-uri.com',
+    'issuer'       => 'http://xauth-server.com/xauth' // Base URL of your XAuthConnect server
+]);
+```
+
+#### Method 2: Manual Configuration
+
+If you need to specify all URLs manually, you can do so as before. This method is also useful for overriding a specific endpoint URL discovered via the `issuer`.
+
+For example, if the discovery document provides a wrong `token_endpoint`, you can override it:
+
+```php
+$provider = new ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider\XAuthConnect([
     'clientId'                => 'your-client-id',
     'clientSecret'            => 'your-client-secret',
     'redirectUri'             => 'https://your-redirect-uri.com',
+    'issuer'                  => 'http://xauth-server.com/xauth', // Still recommended
 
-    // URLs of your XAuthConnect Server
-    'baseAuthorizationUrl'    => 'http://xauth-server.com/xauth/authorize',
-    'baseAccessTokenUrl'      => 'http://xauth-server.com/xauth/token',
-    'resourceOwnerDetailsUrl' => 'http://xauth-server.com/xauth/user',
-    'introspectUrl'           => 'http://xauth-server.com/xauth/introspect',
-    'revokeUrl'               => 'http://xauth-server.com/xauth/revoke'
+    // Manually override the token endpoint
+    'baseAccessTokenUrl'      => 'http://new-token-url.com/token',
 ]);
 ```
 
