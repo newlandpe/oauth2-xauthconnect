@@ -80,7 +80,13 @@ $provider = new ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider\XAuthConnect(
 
 #### Method 2: Manual Configuration
 
-If you need to specify all URLs manually, you can do so as before. The available options are: `baseAuthorizationUrl`, `baseAccessTokenUrl`, `resourceOwnerDetailsUrl`, `introspectUrl`, and `revokeUrl`.
+If you need to specify all URLs manually, you can do so as before. The following options are available for manual configuration:
+
+- `baseAuthorizationUrl`
+- `baseAccessTokenUrl`
+- `resourceOwnerDetailsUrl`
+- `introspectUrl`
+- `revokeUrl`
 
 This method is also useful for overriding a specific endpoint URL discovered via the `issuer`.
 
