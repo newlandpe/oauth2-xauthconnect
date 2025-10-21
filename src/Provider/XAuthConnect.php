@@ -28,7 +28,7 @@ class XAuthConnect extends AbstractProvider
             $this->discoverEndpoints($options['issuer']);
         }
 
-        $requiredOptions = [
+        $urlOptions = [
             'baseAuthorizationUrl',
             'baseAccessTokenUrl',
             'resourceOwnerDetailsUrl',
@@ -36,18 +36,20 @@ class XAuthConnect extends AbstractProvider
             'revokeUrl',
         ];
 
-        foreach ($requiredOptions as $option) {
-            if (empty($this->{$option}) && empty($options[$option])) {
-                throw new \InvalidArgumentException("The '{$option}' option is required or must be discoverable from the 'issuer' URL.");
-            }
-            if (empty($this->{$option})) {
+        foreach ($urlOptions as $option) {
+            if (!empty($options[$option])) {
                 $this->{$option} = $options[$option];
+            }
+        }
+
+        foreach ($urlOptions as $option) {
+            if (empty($this->{$option})) {
+                throw new \InvalidArgumentException("The '{$option}' option is required or must be discoverable from the 'issuer' URL.");
             }
         }
     }
 
-    protected function discoverEndpoints(string $issuer):
-    void
+    protected function discoverEndpoints(string $issuer): void
     {
         $wellKnownUrl = rtrim($issuer, '/') . '/.well-known/openid-configuration';
 
