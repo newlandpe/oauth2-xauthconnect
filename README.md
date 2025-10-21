@@ -160,7 +160,7 @@ You can check if a token is active and view its metadata.
 $introspectionResult = $provider->introspectToken($accessToken->getToken());
 
 if ($introspectionResult['active']) {
-    echo "Token is active. \n";
+    echo "Token is active.\n";
     echo "Expires at: " . date('Y-m-d H:i:s', $introspectionResult['exp']);
 } else {
     echo "Token is not active.";
