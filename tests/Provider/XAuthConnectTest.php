@@ -150,4 +150,125 @@ class XAuthConnectTest extends TestCase
         $this->assertInstanceOf(HostedDomainException::class, $exception);
         $this->assertEquals("User is not part of domain '$configuredDomain'", $exception->getMessage());
     }
+
+    public function testDiscoverySuccess()
+    {
+        $discoveryDoc = [
+            'authorization_endpoint' => 'http://discovered.com/auth',
+            'token_endpoint' => 'http://discovered.com/token',
+            'userinfo_endpoint' => 'http://discovered.com/user',
+            'introspection_endpoint' => 'http://discovered.com/introspect',
+            'revocation_endpoint' => 'http://discovered.com/revoke',
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($discoveryDoc)),
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
+        $provider = new XAuthConnect([
+            'issuer'       => 'http://discovered.com',
+            'clientId'     => 'test_client_123',
+            'clientSecret' => 'test_secret_key',
+            'redirectUri'  => 'http://127.0.0.1:8081/client.php',
+        ], ['httpClient' => $client]);
+
+        $this->assertEquals('http://discovered.com/auth', $provider->getBaseAuthorizationUrl([]));
+        $this->assertEquals('http://discovered.com/token', $provider->getBaseAccessTokenUrl([]));
+        $this->assertEquals('http://discovered.com/user', $provider->getResourceOwnerDetailsUrl(new AccessToken(['access_token' => 'test'])));
+    }
+
+    public function testDiscoveryManualOverride()
+    {
+        $discoveryDoc = [
+            'authorization_endpoint' => 'http://discovered.com/auth',
+            'token_endpoint' => 'http://discovered.com/token',
+            'userinfo_endpoint' => 'http://discovered.com/user',
+            'introspection_endpoint' => 'http://discovered.com/introspect',
+            'revocation_endpoint' => 'http://discovered.com/revoke',
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($discoveryDoc)),
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
+        $provider = new XAuthConnect([
+            'issuer'       => 'http://discovered.com',
+            'clientId'     => 'test_client_123',
+            'clientSecret' => 'test_secret_key',
+            'redirectUri'  => 'http://127.0.0.1:8081/client.php',
+            'baseAuthorizationUrl' => 'http://manual-override.com/auth',
+        ], ['httpClient' => $client]);
+
+        $this->assertEquals('http://manual-override.com/auth', $provider->getBaseAuthorizationUrl([]));
+        $this->assertEquals('http://discovered.com/token', $provider->getBaseAccessTokenUrl([])); // This one should still be from discovery
+    }
+
+    public function testDiscoveryHttpFailure()
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Failed to discover endpoints');
+
+        $mock = new MockHandler([
+            new Response(500),
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
+        new XAuthConnect([
+            'issuer'       => 'http://failed-discovery.com',
+            'clientId'     => 'test_client_123',
+            'clientSecret' => 'test_secret_key',
+            'redirectUri'  => 'http://127.0.0.1:8081/client.php',
+        ], ['httpClient' => $client]);
+    }
+
+    public function testDiscoveryInvalidJson()
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Failed to parse discovery document');
+
+        $mock = new MockHandler([
+            new Response(200, [], 'this is not json'),
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
+        new XAuthConnect([
+            'issuer'       => 'http://invalid-json.com',
+            'clientId'     => 'test_client_123',
+            'clientSecret' => 'test_secret_key',
+            'redirectUri'  => 'http://127.0.0.1:8081/client.php',
+        ], ['httpClient' => $client]);
+    }
+
+    public function testDiscoveryMissingRequiredUrl()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("The 'baseAuthorizationUrl' option is required or must be discoverable from the 'issuer' URL.");
+
+        $discoveryDoc = [
+            // authorization_endpoint is missing
+            'token_endpoint' => 'http://discovered.com/token',
+            'userinfo_endpoint' => 'http://discovered.com/user',
+            'introspection_endpoint' => 'http://discovered.com/introspect',
+            'revocation_endpoint' => 'http://discovered.com/revoke',
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($discoveryDoc)),
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
+        new XAuthConnect([
+            'issuer'       => 'http://missing-url.com',
+            'clientId'     => 'test_client_123',
+            'clientSecret' => 'test_secret_key',
+            'redirectUri'  => 'http://127.0.0.1:8081/client.php',
+        ], ['httpClient' => $client]);
+    }
 }

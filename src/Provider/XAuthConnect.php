@@ -14,11 +14,11 @@ class XAuthConnect extends AbstractProvider
 {
     use BearerAuthorizationTrait;
 
-    public string $baseAuthorizationUrl;
-    public string $baseAccessTokenUrl;
-    public string $resourceOwnerDetailsUrl;
-    public string $introspectUrl;
-    public string $revokeUrl;
+    public ?string $baseAuthorizationUrl = null;
+    public ?string $baseAccessTokenUrl = null;
+    public ?string $resourceOwnerDetailsUrl = null;
+    public ?string $introspectUrl = null;
+    public ?string $revokeUrl = null;
 
     public function __construct(array $options = [], array $collaborators = [])
     {
@@ -54,7 +54,7 @@ class XAuthConnect extends AbstractProvider
         $wellKnownUrl = rtrim($issuer, '/') . '/.well-known/openid-configuration';
 
         try {
-            $httpClient = new HttpClient();
+            $httpClient = $this->getHttpClient();
             $response = $httpClient->get($wellKnownUrl);
             $data = json_decode((string) $response->getBody(), true);
 
