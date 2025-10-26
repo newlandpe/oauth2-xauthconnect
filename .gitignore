@@ -7,3 +7,6 @@ composer.phar
 build/
 *.log
 *.phar
+.phpunit.result.cache
+clover.xml
+coverage-report/
