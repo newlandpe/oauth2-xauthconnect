@@ -165,6 +165,21 @@ class XAuthConnectTest extends TestCase
 
     public function testConstructorWithAllOptions()
     {
+        $discoveryDoc = [
+            'authorization_endpoint' => 'http://127.0.0.1:8010/xauth/authorize',
+            'token_endpoint' => 'http://127.0.0.1:8010/xauth/token',
+            'userinfo_endpoint' => 'http://127.0.0.1:8010/xauth/user',
+            'introspection_endpoint' => 'http://127.0.0.1:8010/xauth/introspect',
+            'revocation_endpoint' => 'http://127.0.0.1:8010/xauth/revoke',
+            'jwks_uri' => 'http://127.0.0.1:8010/xauth/jwks',
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($discoveryDoc)),
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
         $options = [
             'clientId'                => 'test_client_123',
             'clientSecret'            => 'test_secret_key',
@@ -178,7 +193,7 @@ class XAuthConnectTest extends TestCase
             'issuer'                  => 'http://127.0.0.1:8010',
         ];
 
-        $provider = new XAuthConnect($options);
+        $provider = new XAuthConnect($options, ['httpClient' => $client]);
 
         $this->assertEquals($options['baseAuthorizationUrl'], $provider->baseAuthorizationUrl);
         $this->assertEquals($options['baseAccessTokenUrl'], $provider->baseAccessTokenUrl);
