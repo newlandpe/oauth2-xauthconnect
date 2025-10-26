@@ -2,7 +2,9 @@
 
 namespace ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider;
 
-use GuzzleHttp\Client as HttpClient;
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
+use InvalidArgumentException;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
@@ -19,13 +21,16 @@ class XAuthConnect extends AbstractProvider
     public ?string $resourceOwnerDetailsUrl = null;
     public ?string $introspectUrl = null;
     public ?string $revokeUrl = null;
+    public ?string $jwksUrl = null;
+    protected array $options = [];
 
     public function __construct(array $options = [], array $collaborators = [])
     {
         parent::__construct($options, $collaborators);
+        $this->options = array_merge($this->options, $options);
 
-        if (!empty($options['issuer'])) {
-            $this->discoverEndpoints($options['issuer']);
+        if (!empty($this->options['issuer'])) {
+            $this->discoverEndpoints($this->options['issuer']);
         }
 
         $urlOptions = [
@@ -34,17 +39,18 @@ class XAuthConnect extends AbstractProvider
             'resourceOwnerDetailsUrl',
             'introspectUrl',
             'revokeUrl',
+            'jwksUrl',
         ];
 
         foreach ($urlOptions as $option) {
-            if (!empty($options[$option])) {
-                $this->{$option} = $options[$option];
+            if (!empty($this->options[$option])) {
+                $this->{$option} = $this->options[$option];
             }
         }
 
         foreach ($urlOptions as $option) {
             if (empty($this->{$option})) {
-                throw new \InvalidArgumentException("The '{$option}' option is required or must be discoverable from the 'issuer' URL.");
+                throw new InvalidArgumentException("The '{$option}' option is required or must be discoverable from the 'issuer' URL.");
             }
         }
     }
@@ -67,10 +73,69 @@ class XAuthConnect extends AbstractProvider
             $this->resourceOwnerDetailsUrl = $data['userinfo_endpoint'] ?? null;
             $this->introspectUrl = $data['introspection_endpoint'] ?? null;
             $this->revokeUrl = $data['revocation_endpoint'] ?? null;
+            $this->jwksUrl = $data['jwks_uri'] ?? null;
 
         } catch (\Exception $e) {
             throw new \RuntimeException('Failed to discover endpoints: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    public function getAccessToken($grant, array $options = []): AccessTokenInterface
+    {
+        $accessToken = parent::getAccessToken($grant, $options);
+
+        $idToken = $accessToken->getValues()['id_token'] ?? null;
+
+        if ($idToken) {
+            $nonce = $_SESSION['oauth2nonce'] ?? null;
+            unset($_SESSION['oauth2nonce']);
+
+            $validatedClaims = $this->getValidatedClaims($idToken, $nonce);
+            $values = array_merge($accessToken->getValues(), ['id_token_claims' => $validatedClaims]);
+            $accessToken = new AccessToken(array_merge($accessToken->jsonSerialize(), $values));
+        }
+
+        return $accessToken;
+    }
+
+    private function getValidatedClaims(string $idToken, ?string $expectedNonce): array
+    {
+        $jwks = $this->fetchJwks();
+        $keys = JWK::parseKeySet($jwks);
+
+        $decoded = JWT::decode($idToken, $keys);
+
+        if ($decoded->iss !== $this->getConfiguredIssuer()) {
+            throw new IdentityProviderException('Invalid issuer claim', 0, $idToken);
+        }
+
+        $aud = is_array($decoded->aud) ? $decoded->aud : [$decoded->aud];
+        if (!in_array($this->clientId, $aud, true)) {
+            throw new IdentityProviderException('Invalid audience claim', 0, $idToken);
+        }
+
+        if ($expectedNonce !== null) {
+            if (empty($decoded->nonce)) {
+                throw new IdentityProviderException('ID token is missing nonce claim', 0, $idToken);
+            }
+            if ($decoded->nonce !== $expectedNonce) {
+                throw new IdentityProviderException('Invalid nonce', 0, $idToken);
+            }
+        }
+
+        return (array) $decoded;
+    }
+
+    private function fetchJwks(): array
+    {
+        $response = $this->getHttpClient()->get($this->jwksUrl);
+        $data = json_decode((string) $response->getBody(), true);
+        return $data;
+    }
+
+    private function getConfiguredIssuer(): string
+    {
+        return $this->options['issuer'];
     }
 
     public function getBaseAuthorizationUrl(): string
@@ -125,7 +190,7 @@ class XAuthConnect extends AbstractProvider
 
     protected function getDefaultScopes(): array
     {
-        return ['profile:nickname', 'profile:uuid'];
+        return ['openid', 'profile:nickname', 'profile:uuid'];
     }
 
     protected function getScopeSeparator(): string
