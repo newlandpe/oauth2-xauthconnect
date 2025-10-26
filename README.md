@@ -67,6 +67,9 @@ You can initialize the provider in two ways.
 
 Provide the `issuer` URL of your XAuthConnect server. The provider will automatically discover all the required endpoint URLs.
 
+> [!IMPORTANT]
+> The `issuer` URL must be publicly accessible and resolvable from the environment where your application is running for OIDC discovery to succeed. If the issuer is not accessible, you must use Method 2 for manual configuration.
+
 ```php
 require_once 'vendor/autoload.php';
 
@@ -80,15 +83,15 @@ $provider = new ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider\XAuthConnect(
 
 #### Method 2: Manual Configuration
 
-If you need to specify all URLs manually, you can do so as before. The following options are available for manual configuration:
+If your OIDC `issuer` is not publicly accessible, or if you need to specify or override specific endpoint URLs manually, you can do so by providing them in the constructor options. This method is also useful for overriding a specific endpoint URL discovered via the `issuer`.
+
+The following options are available for manual configuration:
 
 - `baseAuthorizationUrl`
 - `baseAccessTokenUrl`
 - `resourceOwnerDetailsUrl`
 - `introspectUrl`
 - `revokeUrl`
-
-This method is also useful for overriding a specific endpoint URL discovered via the `issuer`.
 
 For example, if the discovery document provides a wrong `token_endpoint`, you can override it:
 
