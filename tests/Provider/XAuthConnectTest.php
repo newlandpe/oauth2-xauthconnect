@@ -73,6 +73,22 @@ class XAuthConnectTest extends TestCase
         $this->assertEquals(['openid', 'profile:nickname', 'profile:uuid'], $method->invoke($this->provider));
     }
 
+    public function testGetScopeSeparator()
+    {
+        $reflection = new \ReflectionClass($this->provider);
+        $method = $reflection->getMethod('getScopeSeparator');
+        $method->setAccessible(true);
+        $this->assertEquals(' ', $method->invoke($this->provider));
+    }
+
+    public function testGetPkceMethod()
+    {
+        $reflection = new \ReflectionClass($this->provider);
+        $method = $reflection->getMethod('getPkceMethod');
+        $method->setAccessible(true);
+        $this->assertEquals('S256', $method->invoke($this->provider));
+    }
+
     public function testCheckResponseThrowsException()
     {
         $this->expectException(IdentityProviderException::class);
@@ -137,6 +153,33 @@ class XAuthConnectTest extends TestCase
         $this->assertEquals('http://discovered.com/auth', $provider->getBaseAuthorizationUrl([]));
         $this->assertEquals('http://discovered.com/token', $provider->getBaseAccessTokenUrl([]));
         $this->assertEquals('http://discovered.com/user', $provider->getResourceOwnerDetailsUrl(new AccessToken(['access_token' => 'test'])));
+    }
+
+    public function testIntrospectToken()
+    {
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode(['active' => true, 'scope' => 'openid']))
+        ]);
+        $client = new HttpClient(['handler' => $mock]);
+        $this->provider->setHttpClient($client);
+
+        $result = $this->provider->introspectToken('test-token');
+
+        $this->assertTrue($result['active']);
+        $this->assertEquals('openid', $result['scope']);
+    }
+
+    public function testRevokeToken()
+    {
+        $mock = new MockHandler([
+            new Response(200)
+        ]);
+        $client = new HttpClient(['handler' => $mock]);
+        $this->provider->setHttpClient($client);
+
+        // No exception should be thrown
+        $this->provider->revokeToken('test-token');
+        $this->assertTrue(true);
     }
 
     /**
