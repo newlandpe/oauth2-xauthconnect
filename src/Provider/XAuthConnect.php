@@ -2,9 +2,8 @@
 
 namespace ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider;
 
-use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
-use InvalidArgumentException;
+use Firebase\JWT\JWT;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
@@ -39,7 +38,7 @@ class XAuthConnect extends AbstractProvider
      *
      * @param  array  $options  Provider options, including 'issuer', 'clientId', 'clientSecret', and 'redirectUri'.
      * @param  array  $collaborators  An array of collaborators that may be used to override this provider's default behavior.
-     * @throws InvalidArgumentException If required options are missing.
+     * @throws \InvalidArgumentException If required options are missing.
      */
     public function __construct(array $options = [], array $collaborators = [])
     {
@@ -67,7 +66,7 @@ class XAuthConnect extends AbstractProvider
 
         foreach ($urlOptions as $option) {
             if (empty($this->{$option})) {
-                throw new InvalidArgumentException("The '{$option}' option is required or must be discoverable from the 'issuer' URL.");
+                throw new \InvalidArgumentException("The '{$option}' option is required or must be discoverable from the 'issuer' URL.");
             }
         }
     }
