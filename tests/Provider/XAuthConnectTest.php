@@ -103,6 +103,20 @@ class XAuthConnectTest extends TestCase
         $this->provider->getAccessToken('authorization_code', ['code' => 'mock_authorization_code']);
     }
 
+    public function testCheckResponseSuccess()
+    {
+        $reflection = new \ReflectionClass($this->provider);
+        $method = $reflection->getMethod('checkResponse');
+        $method->setAccessible(true);
+
+        $response = new Response(200, [], json_encode(['ok' => true]));
+        $data = json_decode($response->getBody(), true);
+
+        // No exception should be thrown
+        $method->invokeArgs($this->provider, [$response, $data]);
+        $this->assertTrue(true);
+    }
+
     public function testGetResourceOwner()
     {
         $mock = new MockHandler([
@@ -126,14 +140,28 @@ class XAuthConnectTest extends TestCase
         ], $user->toArray());
     }
 
+    public function testConstructorThrowsExceptionForMissingOption()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("The 'baseAuthorizationUrl' option is required or must be discoverable from the 'issuer' URL.");
+
+        new XAuthConnect([
+            // 'issuer' is intentionally omitted
+            'clientId'     => 'test_client_123',
+            'clientSecret' => 'test_secret_key',
+            'redirectUri'  => 'http://127.0.0.1:8081/client.php',
+            // 'baseAuthorizationUrl' is intentionally omitted
+        ]);
+    }
+
     public function testDiscoverySuccess()
     {
         $discoveryDoc = [
             'authorization_endpoint' => 'http://discovered.com/auth',
             'token_endpoint' => 'http://discovered.com/token',
             'userinfo_endpoint' => 'http://discovered.com/user',
-            'introspection_endpoint' => 'http://discovered.com/introspect',
-            'revocation_endpoint' => 'http://discovered.com/revoke',
+            'introspection_endpoint' => 'http://discovered.0.0.1:8010/xauth/introspect',
+            'revocation_endpoint' => 'http://discovered.0.0.1:8010/xauth/revoke',
             'jwks_uri' => 'http://discovered.com/jwks',
         ];
 
@@ -153,6 +181,44 @@ class XAuthConnectTest extends TestCase
         $this->assertEquals('http://discovered.com/auth', $provider->getBaseAuthorizationUrl([]));
         $this->assertEquals('http://discovered.com/token', $provider->getBaseAccessTokenUrl([]));
         $this->assertEquals('http://discovered.com/user', $provider->getResourceOwnerDetailsUrl(new AccessToken(['access_token' => 'test'])));
+    }
+
+    public function testDiscoveryThrowsExceptionForInvalidJson()
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Failed to parse discovery document: Syntax error');
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], 'invalid json'),
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
+        new XAuthConnect([
+            'issuer'       => 'http://discovered.com',
+            'clientId'     => 'test_client_123',
+            'clientSecret' => 'test_secret_key',
+            'redirectUri'  => 'http://127.0.0.1:8081/client.php',
+        ], ['httpClient' => $client]);
+    }
+
+    public function testDiscoveryThrowsExceptionForNetworkError()
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/^Failed to discover endpoints: .*/');
+
+        $mock = new MockHandler([
+            new \GuzzleHttp\Exception\RequestException('Connection refused', new \GuzzleHttp\Psr7\Request('GET', 'test'))
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
+        new XAuthConnect([
+            'issuer'       => 'http://discovered.com',
+            'clientId'     => 'test_client_123',
+            'clientSecret' => 'test_secret_key',
+            'redirectUri'  => 'http://127.0.0.1:8081/client.php',
+        ], ['httpClient' => $client]);
     }
 
     public function testIntrospectToken()
