@@ -152,7 +152,7 @@ class XAuthConnect extends AbstractProvider
         }
 
         $aud = is_array($decoded->aud) ? $decoded->aud : [$decoded->aud];
-        if (!in_array($this->clientId, $aud, true)) {
+        if (!in_array($this->options['clientId'], $aud, true)) {
             throw new IdentityProviderException('Invalid audience claim', 0, $idToken);
         }
 
