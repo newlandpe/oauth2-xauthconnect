@@ -18,18 +18,27 @@ class XAuthConnectTest extends TestCase
 
     protected function setUp(): void
     {
+        $discoveryDoc = [
+            'authorization_endpoint' => 'http://127.0.0.1:8010/xauth/authorize',
+            'token_endpoint' => 'http://127.0.0.1:8010/xauth/token',
+            'userinfo_endpoint' => 'http://127.0.0.1:8010/xauth/user',
+            'introspection_endpoint' => 'http://127.0.0.1:8010/xauth/introspect',
+            'revocation_endpoint' => 'http://127.0.0.1:8010/xauth/revoke',
+            'jwks_uri' => 'http://127.0.0.1:8010/xauth/jwks',
+        ];
+
+        $mock = new MockHandler([
+            new Response(200, ['Content-Type' => 'application/json'], json_encode($discoveryDoc)),
+        ]);
+
+        $client = new HttpClient(['handler' => $mock]);
+
         $this->provider = new XAuthConnect([
             'clientId'                => 'test_client_123',
             'clientSecret'            => 'test_secret_key',
             'redirectUri'             => 'http://127.0.0.1:8081/client.php',
-            'baseAuthorizationUrl'    => 'http://127.0.0.1:8010/xauth/authorize',
-            'baseAccessTokenUrl'      => 'http://127.0.0.1:8010/xauth/token',
-            'resourceOwnerDetailsUrl' => 'http://127.0.0.1:8010/xauth/user',
-            'introspectUrl'           => 'http://127.0.0.1:8010/xauth/introspect',
-            'revokeUrl'               => 'http://127.0.0.1:8010/xauth/revoke',
-            'jwksUrl'                 => 'http://127.0.0.1:8010/xauth/jwks',
             'issuer'                  => 'http://127.0.0.1:8010',
-        ]);
+        ], ['httpClient' => $client]);
     }
 
     public function tearDown(): void
@@ -152,6 +161,31 @@ class XAuthConnectTest extends TestCase
             'redirectUri'  => 'http://127.0.0.1:8081/client.php',
             // 'baseAuthorizationUrl' is intentionally omitted
         ]);
+    }
+
+    public function testConstructorWithAllOptions()
+    {
+        $options = [
+            'clientId'                => 'test_client_123',
+            'clientSecret'            => 'test_secret_key',
+            'redirectUri'             => 'http://127.0.0.1:8081/client.php',
+            'baseAuthorizationUrl'    => 'http://127.0.0.1:8010/xauth/authorize',
+            'baseAccessTokenUrl'      => 'http://127.0.0.1:8010/xauth/token',
+            'resourceOwnerDetailsUrl' => 'http://127.0.0.1:8010/xauth/user',
+            'introspectUrl'           => 'http://127.0.0.1:8010/xauth/introspect',
+            'revokeUrl'               => 'http://127.0.0.1:8010/xauth/revoke',
+            'jwksUrl'                 => 'http://127.0.0.1:8010/xauth/jwks',
+            'issuer'                  => 'http://127.0.0.1:8010',
+        ];
+
+        $provider = new XAuthConnect($options);
+
+        $this->assertEquals($options['baseAuthorizationUrl'], $provider->baseAuthorizationUrl);
+        $this->assertEquals($options['baseAccessTokenUrl'], $provider->baseAccessTokenUrl);
+        $this->assertEquals($options['resourceOwnerDetailsUrl'], $provider->resourceOwnerDetailsUrl);
+        $this->assertEquals($options['introspectUrl'], $provider->introspectUrl);
+        $this->assertEquals($options['revokeUrl'], $provider->revokeUrl);
+        $this->assertEquals($options['jwksUrl'], $provider->jwksUrl);
     }
 
     public function testDiscoverySuccess()
