@@ -77,7 +77,7 @@ $provider = new ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider\XAuthConnect(
     'clientId'     => 'your-client-id',
     'clientSecret' => 'your-client-secret',
     'redirectUri'  => 'https://your-redirect-uri.com',
-    'issuer'       => 'http://xauth-server.com' // Base URL of your XAuthConnect server
+    'issuer'       => 'https://xauth-server.com' // Base URL of your XAuthConnect server
 ]);
 ```
 
@@ -100,10 +100,10 @@ $provider = new ChernegaSergiy\XAuthConnect\OAuth2\Client\Provider\XAuthConnect(
     'clientId'                => 'your-client-id',
     'clientSecret'            => 'your-client-secret',
     'redirectUri'             => 'https://your-redirect-uri.com',
-    'issuer'                  => 'http://xauth-server.com', // Still recommended
+    'issuer'                  => 'https://xauth-server.com', // Still recommended
 
     // Manually override the token endpoint
-    'baseAccessTokenUrl'      => 'http://new-token-url.com/token',
+    'baseAccessTokenUrl'      => 'httpa://new-token-url.com/token',
 ]);
 ```
 
